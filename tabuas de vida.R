@@ -164,3 +164,4 @@ tabua1=tabua1%>%filter(Faixa_Etaria!="Idade ignorada")%>%
 
 write.csv(tabua1, "tabua.csv", row.names = FALSE)
 
+
