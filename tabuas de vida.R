@@ -1,13 +1,13 @@
-#POPULAÇÃO: ftp://ftp.datasus.gov.br/dissemin/publicos/IBGE/POPSVS/
+#POPULAÃ‡ÃƒO: ftp://ftp.datasus.gov.br/dissemin/publicos/IBGE/POPSVS/
 #OBITOS: http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/obt10uf.def
 
 library(foreign)
 library(dplyr)
 library(tidyr)
 library(readr)
-setwd("C:/Users/User/Desktop/IBICT/LEO/Proposta Indicadores/demográficos/tabuas de vida")
+setwd("C:/Users/User/Desktop/IBICT/LEO/Proposta Indicadores/demogrÃ¡ficos/tabuas de vida")
 
-##########Estimativa população#################
+##########Estimativa populaÃ§Ã£o#################
 estimativapop2024 <- read.dbf("POP24.dbf", as.is = F)
 estimativapop2023 <- read.dbf("POP23.dbf", as.is = F)
 estimativapop2022 <- read.dbf("POP22.dbf", as.is = F)
@@ -34,7 +34,7 @@ rm(estimativapop2024)
 popestimativa$UF_COD <- substr(popestimativa$COD_MUN, 1, 2)
 popestimativa<- popestimativa%>%left_join(uf_map, by = "UF_COD")
 popestimativa$IDADE <-as.numeric(as.character(popestimativa$IDADE))
-# criar faixas etárias
+# criar faixas etÃ¡rias
 
 breaks <- c(1, seq(5, 80, by = 5), Inf)   # 1,5,10,...,80,Inf
 labels <- c(
@@ -74,7 +74,7 @@ popestimativa <- popestimativa %>%
 ###############Mortalidade################
 ler_e_processar <- function(arquivo, sexo, ano, col_specs) {
   if (!file.exists(arquivo)) {
-    warning(paste("Arquivo não encontrado:", arquivo))
+    warning(paste("Arquivo nÃ£o encontrado:", arquivo))
     return(NULL)
   }
   dados <- read_delim(arquivo, 
@@ -83,7 +83,7 @@ ler_e_processar <- function(arquivo, sexo, ano, col_specs) {
                       locale = locale(encoding = "ISO-8859-1"), 
                       trim_ws = TRUE, 
                       skip = 4,
-                      col_types = col_specs, # Usa as especificações de tipo
+                      col_types = col_specs, # Usa as especificaÃ§Ãµes de tipo
                       show_col_types = FALSE) 
 
   dados$Sexo <- sexo
@@ -92,21 +92,20 @@ ler_e_processar <- function(arquivo, sexo, ano, col_specs) {
 }
 
 processar_obitos_ano_tidy_corrigido <- function(ano) {
-  # 1. Configuração dos arquivos
+  # 1. ConfiguraÃ§Ã£o dos arquivos
   arquivo_fem <- paste0("obitos", ano, "fem.csv")
   arquivo_masc <- paste0("obitos", ano, "masc.csv")
   arquivo_ign <- paste0("obitos", ano, "ign.csv")
   
-  # 2. Define a especificação dos tipos de coluna para leitura
+  # 2. Define a especificaÃ§Ã£o dos tipos de coluna para leitura
   col_specs <- cols(
     .default = col_character(), 
-    `Faixa Etária` = col_character() 
+    `Faixa EtÃ¡ria` = col_character() 
   )
   
-  # 3. Leitura e processamento usando a função corrigida
+  # 3. Leitura e processamento usando a funÃ§Ã£o corrigida
   dados_fem  <- ler_e_processar(arquivo_fem, "Feminino", ano, col_specs)
   dados_masc <- ler_e_processar(arquivo_masc, "Masculino", ano, col_specs)
-  dados_ign  <- ler_e_processar(arquivo_ign, "Ignorado", ano, col_specs)
   # Une os dados
   lista_dados <- list(dados_fem, dados_masc, dados_ign)
   lista_dados <- lista_dados[!sapply(lista_dados, is.null)]
@@ -117,13 +116,13 @@ processar_obitos_ano_tidy_corrigido <- function(ano) {
   }
   
   obitos_ano_wide <- bind_rows(lista_dados)
-  # 4. Aplica as transformações (TIDY)
+  # 4. Aplica as transformaÃ§Ãµes (TIDY)
   obitos_tidy <- obitos_ano_wide %>%
     mutate(across(c(RO:Total), ~as.numeric(gsub(",", ".", .)))) %>% 
     
     # B. Reestrutura os dados
     pivot_longer(
-      cols = -c(`Faixa Etária det`, Sexo, ANO), 
+      cols = -c(`Faixa EtÃ¡ria det`, Sexo, ANO), 
       names_to = "UF",
       values_to = "OBITOS"
     )%>%
@@ -132,19 +131,19 @@ processar_obitos_ano_tidy_corrigido <- function(ano) {
     mutate(
       OBITOS = ifelse(is.na(OBITOS), 0, OBITOS), 
       UF = ifelse(UF == "Total", "Brasil", UF),
-      `Faixa Etária det`=ifelse(
-        `Faixa Etária det` %in% c("0 a 6 dias","7 a 27 dias","28 a 364 dias","Menor 1 ano (ign)"),
-        "Menor 1 ano",`Faixa Etária det`)
-    ) %>%group_by(`Faixa Etária det`,ANO,UF,Sexo) %>%
+      `Faixa EtÃ¡ria det`=ifelse(
+        `Faixa EtÃ¡ria det` %in% c("0 a 6 dias","7 a 27 dias","28 a 364 dias","Menor 1 ano (ign)"),
+        "Menor 1 ano",`Faixa EtÃ¡ria det`)
+    ) %>%group_by(`Faixa EtÃ¡ria det`,ANO,UF,Sexo) %>%
     summarise(OBITOS = sum(OBITOS, na.rm = TRUE), .groups = "drop")%>%
     # D. Filtra
     filter(
-      `Faixa Etária det` %in% c(  "1 a 4 anos","5 a 9 anos", "10 a 14 anos", "15 a 19 anos", "20 a 24 anos",
+      `Faixa EtÃ¡ria det` %in% c(  "1 a 4 anos","5 a 9 anos", "10 a 14 anos", "15 a 19 anos", "20 a 24 anos",
                                   "25 a 29 anos", "30 a 34 anos", "35 a 39 anos", "40 a 44 anos", 
                                   "45 a 49 anos","50 a 54 anos", "55 a 59 anos", "60 a 64 anos", "65 a 69 anos",
                                   "70 a 74 anos", "75 a 79 anos", "80 anos e mais","Menor 1 ano",
                                   "Idade ignorada") )
-  names(obitos_tidy)=c("Faixa Etária","ANO","UF","Sexo","OBITOS")
+  names(obitos_tidy)=c("Faixa EtÃ¡ria","ANO","UF","Sexo","OBITOS")
   return(obitos_tidy)
 }
 anos_a_processar <- 2020:2024
@@ -153,7 +152,7 @@ obitos <- bind_rows(lista_obitos_tidy)
 
 ###Unindo
 obitos <- obitos %>%
-  rename(Faixa_Etaria = `Faixa Etária`, Sexo = `Sexo`, ANO = `ANO`, UF = `UF`,D_corrigido=OBITOS)
+  rename(Faixa_Etaria = `Faixa EtÃ¡ria`, Sexo = `Sexo`, ANO = `ANO`, UF = `UF`,D_corrigido=OBITOS)
 
 popestimativa <- popestimativa %>%
   rename(Faixa_Etaria = `FAIXA_ETARIA`, Sexo = `SEXO`, ANO = `ANO`, UF = `UF`)
@@ -164,3 +163,4 @@ tabua1=tabua1%>%filter(Faixa_Etaria!="Idade ignorada")%>%
   filter(Sexo!="Ignorado")
 
 write.csv(tabua1, "tabua.csv", row.names = FALSE)
+
